@@ -1,0 +1,44 @@
+make_and_package:
+  stage: build
+  image: node:16-bullseye-slim
+  script:
+    - apt update && apt install -y make bzip2
+    - npm install
+    - make
+    - make source-package
+  artifacts:
+    paths:
+      - jitsi-meet.tar.bz2
+  only:
+    - master
+    - dev
+    - tags
+
+before_script:
+  - mkdir -p ~/.ssh
+  - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+  - chmod 600 ~/.ssh/id_rsa
+  - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+
+staging_deploy:
+  stage: deploy
+  image: kroniak/ssh-client
+  environment:
+    name: staging
+  script:
+    - scp -o StrictHostKeyChecking=no ./jitsi-meet.tar.bz2 $STAGING_SSH_USER@$STAGING_SSH_HOST:~
+    - ssh $STAGING_SSH_USER@$STAGING_SSH_HOST "cd ~ && sudo tar -xf jitsi-meet.tar.bz2 -C /usr/share"
+  only:
+    - master
+    - dev
+    
+production_deploy:
+  stage: deploy
+  image: kroniak/ssh-client
+  environment:
+    name: production
+  script:
+    - scp -P $PRODUCTION_SSH_PORT -o StrictHostKeyChecking=no ./jitsi-meet.tar.bz2 $PRODUCTION_SSH_USER@$PRODUCTION_SSH_HOST:~
+    - ssh -p $PRODUCTION_SSH_PORT $PRODUCTION_SSH_USER@$PRODUCTION_SSH_HOST "cd ~ && cp -r /usr/share/jitsi-meet ./\"$(date +\"%s\")-jitsi-meet.bkp\" && sudo tar -xf jitsi-meet.tar.bz2 -C /usr/share"
+  only:
+    - tags
