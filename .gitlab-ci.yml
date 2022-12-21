@@ -1,6 +1,8 @@
-make_and_package:
+staging_make_and_package:
   stage: build
   image: node:16-bullseye-slim
+  environment:
+    name: staging
   script:
     - |
       {
@@ -11,6 +13,7 @@ make_and_package:
 
     - apt update && apt install -y make bzip2
     - npm install
+    - npm install https://s3.us-west-2.amazonaws.com/downloads.meetrix.io/staging/zip/$ZIP_NAME
     - make
     - make source-package
   artifacts:
@@ -19,7 +22,31 @@ make_and_package:
   only:
     - master
     - dev
+
+production_make_and_package:
+  stage: build
+  image: node:16-bullseye-slim
+  environment:
+    name: production
+  script:
+    - |
+      {
+        echo "@${CI_PROJECT_ROOT_NAMESPACE}:registry=${CI_API_V4_URL}/packages/npm/"
+        echo "${CI_API_V4_URL#http*:}/packages/npm/:_authToken=\${CI_JOB_TOKEN}"
+      } >> .npmrc
+    - echo "Created the following .npmrc:"; cat .npmrc
+
+    - apt update && apt install -y make bzip2
+    - npm install
+    - npm install https://s3.us-west-2.amazonaws.com/downloads.meetrix.io/production/zip/$ZIP_NAME
+    - make
+    - make source-package
+  artifacts:
+    paths:
+      - jitsi-meet.tar.bz2
+  only:
     - tags
+
 
 before_script:
   - mkdir -p ~/.ssh
@@ -39,13 +66,13 @@ staging_deploy:
     - master
     - dev
     
-production_deploy:
-  stage: deploy
-  image: kroniak/ssh-client
-  environment:
-    name: production
-  script:
-    - scp -P $PRODUCTION_SSH_PORT -o StrictHostKeyChecking=no ./jitsi-meet.tar.bz2 $PRODUCTION_SSH_USER@$PRODUCTION_SSH_HOST:~
-    - ssh -p $PRODUCTION_SSH_PORT $PRODUCTION_SSH_USER@$PRODUCTION_SSH_HOST "cd ~ && cp -r /usr/share/jitsi-meet ./\"$(date +\"%s\")-jitsi-meet.bkp\" && sudo tar -xf jitsi-meet.tar.bz2 -C /usr/share"
-  only:
-    - tags
+# production_deploy:
+#   stage: deploy
+#   image: kroniak/ssh-client
+#   environment:
+#     name: production
+#   script:
+#     - scp -P $PRODUCTION_SSH_PORT -o StrictHostKeyChecking=no ./jitsi-meet.tar.bz2 $PRODUCTION_SSH_USER@$PRODUCTION_SSH_HOST:~
+#     - ssh -p $PRODUCTION_SSH_PORT $PRODUCTION_SSH_USER@$PRODUCTION_SSH_HOST "cd ~ && cp -r /usr/share/jitsi-meet ./\"$(date +\"%s\")-jitsi-meet.bkp\" && sudo tar -xf jitsi-meet.tar.bz2 -C /usr/share"
+#   only:
+#     - tags
