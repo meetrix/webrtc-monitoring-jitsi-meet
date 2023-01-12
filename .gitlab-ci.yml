@@ -4,16 +4,16 @@ staging_make_and_package:
   environment:
     name: staging
   script:
-    - |
-      {
-        echo "@${CI_PROJECT_ROOT_NAMESPACE}:registry=${CI_API_V4_URL}/packages/npm/"
-        echo "${CI_API_V4_URL#http*:}/packages/npm/:_authToken=\${CI_JOB_TOKEN}"
-      } >> .npmrc
-    - echo "Created the following .npmrc:"; cat .npmrc
+    # - |
+    #   {
+    #     echo "@${CI_PROJECT_ROOT_NAMESPACE}:registry=${CI_API_V4_URL}/packages/npm/"
+    #     echo "${CI_API_V4_URL#http*:}/packages/npm/:_authToken=\${CI_JOB_TOKEN}"
+    #   } >> .npmrc
+    # - echo "Created the following .npmrc:"; cat .npmrc
 
     - apt update && apt install -y make bzip2
     - npm install
-    - npm install https://s3.us-west-2.amazonaws.com/downloads.meetrix.io/staging/zip/$ZIP_NAME
+    # - npm install https://s3.us-west-2.amazonaws.com/downloads.meetrix.io/staging/zip/$ZIP_NAME
     - make
     - make source-package
   artifacts:
@@ -29,16 +29,16 @@ production_make_and_package:
   environment:
     name: production
   script:
-    - |
-      {
-        echo "@${CI_PROJECT_ROOT_NAMESPACE}:registry=${CI_API_V4_URL}/packages/npm/"
-        echo "${CI_API_V4_URL#http*:}/packages/npm/:_authToken=\${CI_JOB_TOKEN}"
-      } >> .npmrc
-    - echo "Created the following .npmrc:"; cat .npmrc
+    # - |
+    #   {
+    #     echo "@${CI_PROJECT_ROOT_NAMESPACE}:registry=${CI_API_V4_URL}/packages/npm/"
+    #     echo "${CI_API_V4_URL#http*:}/packages/npm/:_authToken=\${CI_JOB_TOKEN}"
+    #   } >> .npmrc
+    # - echo "Created the following .npmrc:"; cat .npmrc
 
     - apt update && apt install -y make bzip2
     - npm install
-    - npm install https://s3.us-west-2.amazonaws.com/downloads.meetrix.io/production/zip/$ZIP_NAME
+    # - npm install https://s3.us-west-2.amazonaws.com/downloads.meetrix.io/production/zip/$ZIP_NAME
     - make
     - make source-package
   artifacts:
